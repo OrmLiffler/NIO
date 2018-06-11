@@ -1,9 +1,11 @@
 package com.company;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
+import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -16,12 +18,13 @@ public class Example {
 
         showPathMethods(path);
         showFiles(path);
+        showBuff();
         showAsync();
     }
 
     private void showFiles(Path path) {
         try {
-            if(!Files.exists(Paths.get("./resources/copy"))) {
+            if (!Files.exists(Paths.get("./resources/copy"))) {
                 Files.createDirectory(Paths.get("./resources/copy"));
             }
 
@@ -38,19 +41,19 @@ public class Example {
 
     }
 
-    private void showAsync(){
+    private void showAsync() {
         try {
             AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(Paths.get("./resources/file_for_read.json"), StandardOpenOption.READ);
             ByteBuffer buffer = ByteBuffer.allocate(100);
             Future result = fileChannel.read(buffer, 0);
 
-            while (result.isDone()){
+            while (result.isDone()) {
                 System.out.println("ololo");
             }
             System.out.println("Bytes read from file: " + result.get());
             buffer.flip();
 
-            while (buffer.hasRemaining()){
+            while (buffer.hasRemaining()) {
                 System.out.print(buffer.getChar());
             }
             buffer.clear();
@@ -76,11 +79,33 @@ public class Example {
             writefFileChannel.write(byteBuffer, Files.size(Paths.get("./resources/async_write.json")));
             writefFileChannel.close();
 
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showBuff() {
+        try {
+            RandomAccessFile aFile = new RandomAccessFile("./resources/file_for_read.json", "rw");
+            FileChannel inChannel = aFile.getChannel();
+
+            ByteBuffer buf = ByteBuffer.allocate(48);
+
+            int bytesRead = inChannel.read(buf);
+            while (bytesRead != -1) {
+
+                buf.flip();
+
+                while (buf.hasRemaining()) {
+                    System.out.print((char) buf.get());
+                }
+
+                buf.clear();
+                bytesRead = inChannel.read(buf);
+            }
+
+            aFile.close();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
             e.printStackTrace();
         }
     }
